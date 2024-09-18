@@ -1,0 +1,30 @@
+model new
+;
+model restore 'SL_CM.sav'
+; initialization
+zone gridpoint initialize displacement (0,0,0)
+zone gridpoint initialize velocity (0,0,0)
+;
+fish define Moduli
+  pnt_ = zone.head
+  poi_ = 0.25           ; poisson's ratio = 0.25 Dr=80%
+  a_ = 79.354           ; Vs=a_*conf^b_ , Dr=80%
+  b_ = 0.24           ; Vs=a_*conf^b_ , Dr=80%
+  dens_ = 1532          ; unit kg/m^3 , Dr=80%
+
+  loop while pnt_ # null
+    conf_ = (zone.stress.prin.x(pnt_) + zone.stress.prin.y(pnt_) + zone.stress.prin.z(pnt_))/3
+    if zone.group(pnt_,'Default') # 'Bedrock'
+      zone.prop(pnt_,'shear') = dens_*((a_*(math.abs(conf_/1000))^b_)^2) ; G = p*Vs^2,   Vs=a_*conf^b_ , Dr=80%
+      zone.prop(pnt_,'bulk') = dens_*((a_*(math.abs(conf_/1000))^b_)^2)*2*(1+poi_)/(3*(1-2*poi_))
+    end_if
+    pnt_ = zone.next(pnt_)
+  end_loop
+end
+@Moduli
+;
+model dynamic active off
+model mechanical active on
+model solve
+;
+model save 'SL_MD.sav'

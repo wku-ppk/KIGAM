@@ -1,0 +1,139 @@
+model new
+model restore 'SL_MD.sav'
+
+; initialization
+zone gridpoint initialize displacement (0,0,0)
+zone gridpoint initialize velocity (0,0,0)
+
+; Analysis configuration
+model dynamic active on
+model largestrain on
+zone dynamic multi-step on
+model dynamic timestep automatic
+;model dynamic time-total 0
+
+; [1] apply input motion
+table '1' import 'NT_009.his'
+;zone face apply stress-dip 8389815 table '1' range position-z -2
+
+; [2] select history
+
+; Time history
+model history name '10' dynamic time-total
+
+;zone history_Bedrock_x
+zone history name '11' acceleration-x position 25.2 18.9 0
+zone history name '12' acceleration-y position 25.2 18.9 0
+zone history name '13' acceleration-z position 25.2 18.9 0
+zone history name '14' velocity-x position 25.2 18.9 0
+zone history name '15' displacement-x position 25.2 18.9 0
+
+;zone history_Crest
+zone history name '101' acceleration-x position 28.2 18.9 36
+zone history name '102' acceleration-x position 28.2 18.9 30
+zone history name '103' acceleration-x position 28.2 18.9 24
+zone history name '104' acceleration-x position 28.2 18.9 18
+zone history name '105' acceleration-x position 28.2 18.9 12
+zone history name '106' acceleration-x position 28.2 18.9 6
+
+;zone history_FF1
+zone history name '201' acceleration-x position 39.6 18.9 36
+zone history name '202' acceleration-x position 39.6 18.9 30
+zone history name '203' acceleration-x position 39.6 18.9 24
+zone history name '204' acceleration-x position 39.6 18.9 18
+zone history name '205' acceleration-x position 39.6 18.9 12
+zone history name '206' acceleration-x position 39.6 18.9 6
+
+;zone history_FF2
+zone history name '301' acceleration-x position 45 18.9 36
+zone history name '302' acceleration-x position 45 18.9 30
+zone history name '303' acceleration-x position 45 18.9 24
+zone history name '304' acceleration-x position 45 18.9 18
+zone history name '305' acceleration-x position 45 18.9 12
+zone history name '306' acceleration-x position 45 18.9 6
+
+;zone history_FF_actual
+zone history name '401' acceleration-x position 45 18.9 36
+zone history name '402' acceleration-x position 45 18.9 30
+zone history name '403' acceleration-x position 45 18.9 24
+zone history name '404' acceleration-x position 45 18.9 18
+zone history name '405' acceleration-x position 45 18.9 12
+zone history name '406' acceleration-x position 45 18.9 6
+  
+   
+; [3] initalization
+zone gridpoint initialize displacement (0,0,0)
+zone gridpoint initialize velocity (0,0,0)
+
+; [4] Damping
+fish define Hyst_Damp
+  pnt_ = zone.head
+  loop while pnt_ # null
+    conf_ = (zone.stress.prin.x(pnt_) + zone.stress.prin.y(pnt_) + zone.stress.prin.z(pnt_))/3
+    if zone.group(pnt_,'Default') # 'Bedrock'                       
+      if math.abs(conf_/1000) < 50 
+        zone.group(pnt_,'Default') = 'Silica 1' 
+        id1_ = zone.id(pnt_)
+        r1_ = 0.085127
+        command
+          zone dynamic damping hysteretic hardin @r1_ range id @id1_
+          zone dynamic damping combined 0.05 range id @id1_
+        end_command
+      end_if
+      if math.abs(conf_/1000) >= 50
+        zone.group(pnt_,'Default') = 'Silica 2'
+        id2_ = zone.id(pnt_)
+        r2_ = 0.10814
+        command
+          zone dynamic damping hysteretic hardin @r2_ range id @id2_
+          zone dynamic damping combined 0.05 range id @id2_
+        end_command
+      end_if
+      if math.abs(conf_/1000) >= 100
+        zone.group(pnt_,'Default') = 'Silica 3'
+        id3_ = zone.id(pnt_)
+        r3_ = 0.13839
+        command
+          zone dynamic damping hysteretic hardin @r3_ range id @id3_
+          zone dynamic damping combined 0.05 range id @id3_
+        end_command
+      end_if
+      if math.abs(conf_/1000) >= 200
+        zone.group(pnt_,'Default') = 'Silica 4'
+        id4_ = zone.id(pnt_)
+        r4_ = 0.241741
+        command
+          zone dynamic damping hysteretic hardin @r4_ range id @id4_
+          zone dynamic damping combined 0.05 range id @id4_
+        end_command
+      end_if
+      if math.abs(conf_/1000) >= 400
+        zone.group(pnt_,'Default') = 'Silica 5'
+        id5_ = zone.id(pnt_)
+        r5_ = 0.323152
+        command
+          zone dynamic damping hysteretic hardin @r5_ range id @id5_
+          zone dynamic damping combined 0.05 range id @id5_
+        end_command
+      end_if
+    end_if
+    pnt_ = zone.next(pnt_)
+  end_loop
+end
+@Hyst_Damp
+
+zone dynamic damping combined 0.05 range group 'Bedrock'
+
+; [5] quiet boundary & input
+zone face apply quiet-normal range position-z -2
+zone face apply quiet-strike range position-z -2
+zone face apply quiet-dip range position-z -2
+zone face apply stress-dip 8389815 table '1' range position-z -2
+
+; [6] Free-Field
+zone dynamic free-field on 
+
+
+
+model solve time-total 20
+model save 'SL_NT009_result.sav'

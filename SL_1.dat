@@ -1,0 +1,45 @@
+model new
+;
+model restore 'Case 1_60 g_model'
+;
+model large-strain off
+model configure dynamic
+;
+
+zone delete range position-z 0.0 -2.0 ; added bu ppk 241015
+
+zone create brick point 0 (0.0, 0.0 , -2.0) point 1 (50.4, 0.0, -2.0) point 4 (50.4, 37.8, -2.0) point 2 (0.0, 37.8, -2.0) &
+                  point 3 (0.0, 0.0 ,  0.0) point 6 (50.4, 0.0,  0.0) point 7 (50.4, 37.8,  0.0) point 5 (0.0, 37.8,  0.0) size 10 7 1 group 'Bedrock' ; added by ppk to reduce dynamic time step
+
+zone attach by-face range position-z 0
+
+model large-strain off
+
+
+; Specifying model
+zone cmodel assign elastic range group 'Bedrock' ; (Bedrock)
+zone prop density=2700 bulk=34.7E9 shear=26.07E9 range group 'Bedrock' ; (Bedrock)
+zone cmodel assign mohr-coulomb range group  'Silica'; (Silica sand)
+zone property density=1532 bulk=1.236e8 shear=7.415e7 cohesion=0 friction=39 dilation=0.0 tension=0.0 range group 'Silica'; (Silica sand, Dr: 80 %)
+
+
+;
+zone gridpoint fix velocity-x range position-x -0.1 0.1
+zone gridpoint fix velocity-x range position-x 50.3 50.5
+zone gridpoint fix velocity-y range position-y -.1 .1
+zone gridpoint fix velocity-y range position-y 37.7 37.9
+zone gridpoint fix velocity-z range position-z -2.1 -1.9
+
+model gravity 0 0 -10
+
+;running condition
+model dynamic active off
+model mechanical active on
+; Historyies
+model history mechanical ratio
+;
+
+model solve elastic
+model solve 
+;
+model save 'SL_CM.sav'

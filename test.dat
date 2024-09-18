@@ -1,0 +1,4 @@
+model new
+model restore 'SL_Sweep008_result.sav'
+
+hist list series 10
