@@ -59,14 +59,20 @@ model mechanical active on
 
 model solve ; set strains for hysteretic damping
 
-
 ;--- initialize displacement
 zone gridpoint initialize displacement-x 0.0
 zone gridpoint initialize displacement-y 0.0
 zone gridpoint initialize displacement-z 0.0
 
+program thread automatic
+zone dynamic multi-step on
+
+model dynamic active on
+model large-strain on
+model mechanical active on 
+
 ;zone dynamic damping rayleighcombined 0.05 range group 'Bedrock'
-zone dynamic damping rayleigh 0.02 1.5 ; 1.5 = Vs/(4H) = 220m/s / (4*36m), 2% minimum damping is applied
+zone dynamic damping rayleigh 0.01 1.5 ; 1.5 = Vs/(4H) = 220m/s / (4*36m), 2% minimum damping is applied
 
 ; [5] quiet boundary & input
 ;zone face apply quiet-normal range position-z -2
@@ -75,18 +81,13 @@ zone dynamic damping rayleigh 0.02 1.5 ; 1.5 = Vs/(4H) = 220m/s / (4*36m), 2% mi
 
 zone face apply quiet range position-z -2 ; modified by ppk
 ; calculate coeff : 2 x Cs x roh x 1/2 = Cs x roh = 1532 x SQRT(7.415E7 / 1532)
-zone face apply stress-xz 8389815 table '1' range position-z -2 ; modified by ppk
-zone face apply stress-yz 0.0 table '1' range position-z -2 ; modified by ppk
-zone face apply stress-zz 0.0 table '1' range position-z -2 ; modified by ppk
-
+zone face apply stress-xz -8389815 table '1' range position-z -2.0 ; modified by ppk
+zone face apply stress-yz 0.0 table '1' range position-z -2.0 ; modified by ppk
+zone face apply stress-zz 0.0 table '1' range position-z -2.0 ; modified by ppk
 zone dynamic free-field on 
 
-; [6] Free-Field
+;--- dynamic run
 
-; Declare analysis condition by ppk (24.09.12)
-
-model dynamic active on
-model mechanical active on 
 
 model step 10
 
@@ -140,10 +141,6 @@ zone history name '403' acceleration-x position 45 18.9 24
 zone history name '404' acceleration-x position 45 18.9 18
 zone history name '405' acceleration-x position 45 18.9 12
 zone history name '406' acceleration-x position 45 18.9 6
-
-;--- dynamic run
-program thread automatic
-zone dynamic multi-step on
 
 model dynamic time-total 0.0
 model solve time-total 10
